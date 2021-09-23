@@ -1454,6 +1454,9 @@ endGame( winner, endReasonText )
 	
 	level.intermission = true;
 	
+	level notify("start_mapvote");
+	level waittill("end_mapvote");
+	
 	//regain players array since some might've disconnected during the wait above
 	players = level.players;
 	for ( index = 0; index < players.size; index++ )
@@ -1465,7 +1468,7 @@ endGame( winner, endReasonText )
 		player notify ( "reset_outcome" );
 		player thread spawnIntermission();
 		player setClientDvar( "ui_hud_hardcore", 0 );
-		player setclientdvar( "g_scriptMainMenu", game["menu_votemap"] );
+		player setclientdvar( "g_scriptMainMenu", game["menu_eog_main"] );
 	}
 	
 	logString( "game ended" );
@@ -3788,10 +3791,8 @@ Callback_StartGameType()
 	thread maps\mp\gametypes\_spawnlogic::init();
 	thread maps\mp\gametypes\_oldschool::init();
 	thread maps\mp\gametypes\_battlechatter_mp::init();
-	
-	thread maps\mp\gametypes\test::init();
 
-	thread maps\mp\gametypes\_hardpoints::init();
+	thread mapvote\script\dynamic_mapvote::init();
 
 	if ( level.teamBased )
 		thread maps\mp\gametypes\_friendicons::init();
@@ -4393,8 +4394,6 @@ isHeadShot( sWeapon, sHitLoc, sMeansOfDeath )
 
 Callback_PlayerDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime )
 {
-	iPrintLnBold("dmg: " + self.name + " " + sWeapon);
-
 	// create a class specialty checks; CAC:bulletdamage, CAC:armorvest
 	iDamage = maps\mp\gametypes\_class::cac_modified_damage( self, eAttacker, iDamage, sMeansOfDeath );
 	self.iDFlags = iDFlags;
@@ -4756,8 +4755,6 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 {
 	self endon( "spawned" );
 	self notify( "killed_player" );
-	
-	iPrintLnBold("death: " + self.name + " " + sWeapon);
 	
 	if ( self.sessionteam == "spectator" )
 		return;
