@@ -48,6 +48,9 @@
 		decoration \
 	}
 	
+#define TIME_LEFT		dvarInt(mapvote_votetime)
+#define TIME_LEFT_DOT	(9-int((milliseconds()/100)%10))
+
 #define VOTE_TIMER \
 	itemDef \
 	{ \
@@ -73,17 +76,36 @@
 		exp                       rect H ( VOTE_TIMER_HEIGHT ) \
 		foreColor                 1 1 1 1 \
 		backColor                 0 0 0 0.8 \
-		exp 					  text ( "Remaining Time: " + secondsAsCountdown( dvarInt(mapvote_votetime)-((milliseconds()-dvarInt(ui_time_menuOpened)) / 1000)) ); \
+		exp 					  text ( "Remaining Time: " + secondsAsCountdown(0) + ".0"); \
 		textFont                  UI_FONT_NORMAL \
 		textAlign                 ITEM_ALIGN_LEGACY_CENTER \
 		textAlignY                24 \
 		textScale                 0.375 \
-		visible					  1 \
+		visible					  when(TIME_LEFT < 0) \
+		decoration \
+	} \
+	itemDef \
+	{ \
+		name                      "timer_1" \
+		type					  ITEM_TYPE_TEXT \
+		rect                      0 0 VOTEBUTTON_IMAGE_SIZE_X VOTEBUTTON_IMAGE_SIZE_Y HORIZONTAL_ALIGN_SUBLEFT VERTICAL_ALIGN_SUBTOP \
+		exp                       rect X ( 0 ) \
+		exp                       rect Y ( 0 - (VOTE_TIMER_HEIGHT+2) ) \
+		exp                       rect W (VOTE_RECT_WIDTH) \
+		exp                       rect H ( VOTE_TIMER_HEIGHT ) \
+		foreColor                 1 1 1 1 \
+		backColor                 0 0 0 0.8 \
+		exp 					  text ( "Remaining Time: " + secondsAsCountdown(TIME_LEFT) + "." + TIME_LEFT_DOT ); \
+		textFont                  UI_FONT_NORMAL \
+		textAlign                 ITEM_ALIGN_LEGACY_CENTER \
+		textAlignY                24 \
+		textScale                 0.375 \
+		visible					  when(TIME_LEFT >= 0) \
 		decoration \
 	}
 
 #define VOTEBUTTON(pIndex, pRow, pCollumn, pResponse) \
-	itemDef \
+	itemDef \ //map preview image
 	{ \
 		rect                      0 0 VOTEBUTTON_IMAGE_SIZE_X VOTEBUTTON_IMAGE_SIZE_Y HORIZONTAL_ALIGN_SUBLEFT VERTICAL_ALIGN_SUBTOP \
 		style                     WINDOW_STYLE_SHADER \
@@ -100,7 +122,7 @@
 		visible                   when( dvarint(mapvote_voteableItems) >= pIndex) \
 		decoration \
 	} \
-	itemDef \
+	itemDef \ //gradient
 	{ \
 		rect                      0 0 VOTEBUTTON_IMAGE_SIZE_X 17.5 HORIZONTAL_ALIGN_SUBLEFT VERTICAL_ALIGN_SUBTOP \
 		style                     WINDOW_STYLE_SHADER \
@@ -116,7 +138,7 @@
 		visible                   when ( dvarint(mapvote_voteableItems) >= pIndex ) \
 		decoration \
 	} \
-	itemDef \
+	itemDef \ //map name
 	{ \
 		rect                      0 0 VOTEBUTTON_NAME_SIZE_X VOTEBUTTON_NAME_SIZE_Y HORIZONTAL_ALIGN_SUBLEFT VERTICAL_ALIGN_SUBTOP \
 		style                     WINDOW_STYLE_FILLED \
@@ -137,7 +159,7 @@
 		visible                   when( dvarint(mapvote_voteableItems) >= pIndex) \     
 		decoration \
 	} \
-	itemDef \
+	itemDef \ //display for amount of votes for this map
 	{ \
 		rect                      0 0 VOTEBUTTON_NAME_SIZE_X VOTEBUTTON_NAME_SIZE_Y HORIZONTAL_ALIGN_SUBLEFT VERTICAL_ALIGN_SUBTOP \
 		style                     WINDOW_STYLE_FILLED \
@@ -158,7 +180,7 @@
 		visible                   when( dvarint(mapvote_voteableItems) >= pIndex) \
 		decoration \
 	} \
-	itemDef \
+	itemDef \ //mark what did I vote for
 	{ \
 		rect                      0 0 VOTEBUTTON_IMAGE_SIZE_X VOTEBUTTON_IMAGE_SIZE_Y HORIZONTAL_ALIGN_SUBLEFT VERTICAL_ALIGN_SUBTOP \
 		style                     WINDOW_STYLE_SHADER \
@@ -175,7 +197,24 @@
 		visible                   when ( ( dvarint( "selected_map" ) == pIndex && dvarint(mapvote_voteableItems) >= pIndex ) ) \ \
 		decoration \
 	} \
-	itemDef \
+	itemDef \ //mark the map with the most votes
+	{ \
+		rect                      0 0 VOTEBUTTON_IMAGE_SIZE_X VOTEBUTTON_IMAGE_SIZE_Y HORIZONTAL_ALIGN_SUBLEFT VERTICAL_ALIGN_SUBTOP \
+		style                     WINDOW_STYLE_SHADER \
+		border  	              1 \
+		borderSize                VOTEBUTTON_BORDER_SIZE \
+		foreColor                 0 0 0 0 \
+		backColor                 0 0 0 0 \
+		borderColor               0 0.45 0 0.5 \
+		outlineColor              0 0 0 0 \
+		textScale                 0.55 \
+		exp                       material ( "black" ); \
+		exp                       rect X ( VOTEBUTTON_POS_X(pCollumn) ); \
+		exp                       rect Y ( VOTEBUTTON_POS_Y(pRow) ); \
+		visible                   when ( dvarint(mapvote_winner) == pIndex ) \ \
+		decoration \
+	} \
+	itemDef \ //vote button to cast a vote
 	{ \
 		rect                      0 0 VOTEBUTTON_IMAGE_SIZE_X VOTEBUTTON_IMAGE_SIZE_Y HORIZONTAL_ALIGN_SUBLEFT VERTICAL_ALIGN_SUBTOP \
 		style                     WINDOW_STYLE_FILLED \
@@ -202,7 +241,7 @@
 	#define POPUP_MOVE_SPEED		600 	//milliseconds
 	#define ANIMATE_DISTANCE		800		//units
 	
-	#define ZERO_TO_ONE				milliseconds()-dvarInt(ui_time_menuOpened)
+	#define ZERO_TO_ONE				milliseconds()-dvarInt(menuOpenTime)
 	#define UNIT_GROWTH				sin( sin( min( ZERO_TO_ONE, POPUP_MOVE_SPEED )*(1.5707/POPUP_MOVE_SPEED) )*1.5707 )
     
 	#define FRAME_ANIMATE(offset)	(offset-offset*UNIT_GROWTH)
@@ -227,7 +266,10 @@
 			exec "exec dynamic_mapvote.cfg"
 		
 			//animation start marker
-			exec "setdvartotime ui_time_menuOpened";
+			exec "setdvartotime menuOpenTime";
+			
+			//reset the players last vote
+			exec "set selected_map 0";
 			
 			//correct frame size
 			//width

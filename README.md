@@ -21,6 +21,20 @@ Add the content of the example config to your server config.
 Add the map to config - dvar "sv_voteable_maps".
 Add the loadscreen.iwi file to \mapvote\images folder.
 
+## FAQ
+ 
+- The mapvote.iwd is not updating
+-> check your console and make sure you installed 'zip' on your server
+
+- The mapvote.iwd is generated empty and players get kicked with "Could not find loadscreen_0.iwi"
+-> Make sure you installed 'zip' on your server
+-> Make sure the folder and file permissions are correct
+-> Make sure you have set the fs_homepath correctly
+
+- Players get a download loop when downloading the mapvote.iwd
+-> The mod generates a new mapvote.iwd on every map end therefor the file continously changes.
+-> To avoid a download loop create a softlink instead.
+
 ## Support
 For bug reports and issues, please visit the "Issues" tab at the top.
 First look through the issues, maybe your problem has already been reported.

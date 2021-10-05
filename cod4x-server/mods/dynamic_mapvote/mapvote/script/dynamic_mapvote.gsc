@@ -7,12 +7,39 @@ init()
 }
 
 /*--------------------------\
+|		side functions		|
+\--------------------------*/
+
+shuffleArray(array)
+{
+	currentIndex = array.size;
+	temporaryValue = undefined;
+	randomIndex = undefined;
+
+	// While there remain elements to shuffle...
+	while(currentIndex != 0)
+	{
+		// Pick a remaining element...
+		randomIndex = randomInt(currentIndex);
+		currentIndex -= 1;
+
+		// And swap it with the current element.
+		temporaryValue = array[currentIndex];
+		array[currentIndex] = array[randomIndex];
+		array[randomIndex] = temporaryValue;
+	}
+	
+	return array;
+}
+
+/*--------------------------\
 |		Mapvote itself		|
 \--------------------------*/
 
 initMapvote()
 {
 	if(getDvarInt("mapvote_votetime") <= 0)	setDvar("mapvote_votetime", 15);
+	if(getDvarInt("mapvote_resulttime") <= 0)	setDvar("mapvote_resulttime", 5);
 	if(getDvarInt("mapvote_voteableItems") < 2) setDvar("mapvote_voteableItems", 2);
 	if(getDvarInt("mapvote_voteableItems") > 9) setDvar("mapvote_voteableItems", 9);
 
@@ -42,15 +69,8 @@ initMapvote()
 	if(level.voteableMap.size > 1)
 	{	
 		thread openMapvote();
-		thread updateCastVotes();
-		wait level.mapvote_votetime;
+		updateCastVotes();
 		thread closeMapvote();
-			
-		winner = GetVoteWinner();
-		iPrintLnBold("Next map: " + winner);
-		
-		setDvar("sv_maprotation","gametype " + level.gametype + " map " + winner);
-		setDvar("sv_maprotationcurrent", "gametype " + level.gametype + " map " + winner);
 	}
 	
 	prepareNextMapvote();
@@ -156,6 +176,7 @@ setVoteableMapDvars(voteIsForThisMap)
 	if(!isDefined(voteIsForThisMap) || !voteIsForThisMap)
 	{
 		maps = strTok(getDvar("sv_voteable_maps") , ";");
+		maps = shuffleArray(maps);
 
 		for(i=0;i<maps.size;i++)
 		{
@@ -187,7 +208,7 @@ setVoteableMapDvars(voteIsForThisMap)
 			maps = strTok(getDvar("sv_voteable_maps") , ";");
 		}
 	
-		for(i=0;i<9;i++)
+		for(i=0;i<level.mapvote_voteableItems;i++)
 		{
 			if(!getMapsFromConfig)
 				map = getDvar("mapvote_map" + i);
@@ -200,6 +221,8 @@ setVoteableMapDvars(voteIsForThisMap)
 				continue;
 		
 			level.voteableMap[i] = spawnStruct();
+			level.voteableMap[i].id = i;
+			level.voteableMap[i].menuid = i+1;
 			level.voteableMap[i].name = map;
 			level.voteableMap[i].votes = 0;
 		}
@@ -212,7 +235,7 @@ openMapvote()
 
 	if(isDefined(self) && isPlayer(self))
 	{
-		self setClientDvars("mapvote_votetime", level.mapvote_votetime,
+		self setClientDvars("mapvote_votetime", floor(level.mapvote_votetime - 0.1),
 							"mapvote_voteableItems", level.mapvote_voteableItems);
 
 		self closeMenu();
@@ -225,7 +248,7 @@ openMapvote()
 		for(i=0;i<level.players.size;i++)
 		{
 			level.players[i] setClientDvars(
-							"mapvote_votetime", level.mapvote_votetime,
+							"mapvote_votetime", floor(level.mapvote_votetime - 0.1),
 							"mapvote_voteableItems", level.mapvote_voteableItems);
 
 	
@@ -239,7 +262,7 @@ openMapvote()
 
 closeMapvote()
 {
-	level.mapVoteStarted = false;
+	wait getDvarInt("mapvote_resulttime");
 
 	for(i=0;i<level.players.size;i++)
 	{
@@ -250,33 +273,64 @@ closeMapvote()
 
 updateCastVotes()
 {
-	while(level.mapvote_votetime > 0)
+	update = 0;
+	curWinner = -1;
+	timeLeft = level.mapvote_votetime * 1000;
+	while(timeLeft > 0)
 	{
-		if(level.mapvote_votetime == int(level.mapvote_votetime))
+		update = timeLeft % 1000;
+		if(update == 0 || update == 500)
 		{
-			for(i=0;i<level.players.size;i++)
-			{
-				level.players[i] setClientDvars(
-									"votes_mapvote_map0", level.voteableMap[0].votes,
-									"votes_mapvote_map1", level.voteableMap[1].votes,
-									"votes_mapvote_map2", level.voteableMap[2].votes,
-									"votes_mapvote_map3", level.voteableMap[3].votes,
-									"votes_mapvote_map4", level.voteableMap[4].votes,
-									"votes_mapvote_map5", level.voteableMap[5].votes,
-									"votes_mapvote_map6", level.voteableMap[6].votes,
-									"votes_mapvote_map7", level.voteableMap[7].votes,
-									"votes_mapvote_map8", level.voteableMap[8].votes);
-			}
+			winner = GetVoteWinner();
+			thread sendVotesToPlayers((timeLeft/1000), winner);
 		}
 	
 		wait .05;
 		
-		//minus 0.01 sometimes results is bad float value
-		//example: 3 - 0.01 = 2.899999
-		//to avoid that I go this way
-		level.mapvote_votetime *= 1000;
-		level.mapvote_votetime -= 50;
-		level.mapvote_votetime /= 1000;
+		timeLeft -= 50;
+	}
+	
+	level.mapVoteStarted = false;
+	
+	winner = GetVoteWinner();
+	thread sendVotesToPlayers(0, winner);
+	
+	iPrintLnBold("Next map: " + winner.name);
+	setDvar("sv_maprotation","gametype " + level.gametype + " map " + winner.name);
+	setDvar("sv_maprotationcurrent", "gametype " + level.gametype + " map " + winner.name);
+
+}
+
+sendVotesToPlayers(timeLeft, winner)
+{
+	tempArray = [];
+	for(i=0;i<=8;i++)
+	{
+		if(i < level.voteableMap.size)
+			tempArray[i] = level.voteableMap[i].votes;
+		else
+			tempArray[i] = 0;
+	}
+	
+	if(!isDefined(winner))
+		winner = 0;
+	else
+		winner = winner.menuid;
+	
+	for(i=0;i<level.players.size;i++)
+	{
+		level.players[i] setClientDvars(
+							"votes_mapvote_map0", tempArray[0],
+							"votes_mapvote_map1", tempArray[1],
+							"votes_mapvote_map2", tempArray[2],
+							"votes_mapvote_map3", tempArray[3],
+							"votes_mapvote_map4", tempArray[4],
+							"votes_mapvote_map5", tempArray[5],
+							"votes_mapvote_map6", tempArray[6],
+							"votes_mapvote_map7", tempArray[7],
+							"votes_mapvote_map8", tempArray[8],
+							"mapvote_votetime", floor(timeLeft - 0.1),
+							"mapvote_winner", winner);
 	}
 }
 
@@ -285,24 +339,34 @@ GetVoteWinner()
 	possibleWinner = [];
 
 	if(!level.players.size)
-		return level.voteableMap[randomInt(level.voteableMap.size)].name;
+	{
+		if(level.mapVoteStarted)
+			return undefined;
+	
+		return level.voteableMap[randomInt(level.voteableMap.size)];
+	}
 
 	curAmount = 0;
 	for(i=0;i<level.voteableMap.size;i++)
 	{
 		if(level.voteableMap[i].votes == curAmount)
-			possibleWinner[possibleWinner.size] = level.voteableMap[i].name;
+			possibleWinner[possibleWinner.size] = level.voteableMap[i];
 		else if(level.voteableMap[i].votes > curAmount)
 		{
 			curAmount = level.voteableMap[i].votes;
 			
 			possibleWinner = undefined;
-			possibleWinner[0] = level.voteableMap[i].name;
+			possibleWinner[0] = level.voteableMap[i];
 		}
 	}
 
 	if(curAmount == 0)
-		return level.voteableMap[randomInt(level.voteableMap.size)].name;
+	{
+		if(level.mapVoteStarted)
+			return undefined;
+	
+		return level.voteableMap[randomInt(level.voteableMap.size)];
+	}
 	
 	return possibleWinner[randomInt(possibleWinner.size)];
 }
