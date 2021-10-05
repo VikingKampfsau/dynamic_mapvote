@@ -3,7 +3,7 @@
 ## Overview
 
 A little test if it's possible to create a dynamic mapvote.<br>
-This is a menu based mapvote that auto updates it's iwd everytime the map ends.<br>
+This is a menu based mapvote that auto updates its iwd everytime the map ends.<br>
 That way the content of the mapvote is constantly changing without wasteing assets.<br>
 
 **I never used this in any of my mods so it's not tested on a live server yet**<br>
@@ -23,17 +23,17 @@ Add the loadscreen.iwi file to \mapvote\images folder.
 
 ## FAQ
  
-- The mapvote.iwd is not updating
--> check your console and make sure you installed 'zip' on your server
+Q: The mapvote.iwd is not updating
+A: check your console and make sure you installed 'zip' on your server
 
-- The mapvote.iwd is generated empty and players get kicked with "Could not find loadscreen_0.iwi"
--> Make sure you installed 'zip' on your server
--> Make sure the folder and file permissions are correct
--> Make sure you have set the fs_homepath correctly
+Q: The mapvote.iwd is generated empty and players get kicked with "Could not find loadscreen_0.iwi"
+A: Make sure you installed 'zip' on your server
+   Make sure the folder and file permissions are correct
+   Make sure you have set the fs_homepath correctly
 
-- Players get a download loop when downloading the mapvote.iwd
--> The mod generates a new mapvote.iwd on every map end therefor the file continously changes.
--> To avoid a download loop create a softlink instead.
+Q: Players get a download loop when downloading the mapvote.iwd
+A: The mod generates a new mapvote.iwd on every map end therefor the file continously changes.
+   To avoid a download loop create a softlink instead.
 
 ## Support
 For bug reports and issues, please visit the "Issues" tab at the top.<br>
