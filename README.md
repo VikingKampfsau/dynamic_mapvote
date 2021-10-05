@@ -2,23 +2,23 @@
 
 ## Overview
 
-A little test if it's possible to create a dynamic mapvote.
-This is a menu based mapvote that auto updates it's iwd everytime the map ends.
-That way the content of the mapvote is constantly changing without wasteing assets.
+A little test if it's possible to create a dynamic mapvote.<br>
+This is a menu based mapvote that auto updates it's iwd everytime the map ends.<br>
+That way the content of the mapvote is constantly changing without wasteing assets.<br>
 
-**I never used this in any of my mods so it's not tested on a live server yet
-**Full source included
+**I never used this in any of my mods so it's not tested on a live server yet**<br>
+**Full source included**
 
 ## Installation
 
-Install cod4x and add the required plugins to it.
+Install cod4x and add the required plugins to it.<br>
 Copy the mod to your mods folder - if you already have an older version then remove it.
 
 Add the content of the example config to your server config.
 
 ## How to add more maps
 
-Add the map to config - dvar "sv_voteable_maps".
+Add the map to config - dvar "sv_voteable_maps".<br>
 Add the loadscreen.iwi file to \mapvote\images folder.
 
 ## FAQ
@@ -36,8 +36,8 @@ Add the loadscreen.iwi file to \mapvote\images folder.
 -> To avoid a download loop create a softlink instead.
 
 ## Support
-For bug reports and issues, please visit the "Issues" tab at the top.
-First look through the issues, maybe your problem has already been reported.
+For bug reports and issues, please visit the "Issues" tab at the top.<br>
+First look through the issues, maybe your problem has already been reported.<br>
 If not, feel free to open a new issue.
 
 **Keep in mind that we only support the current state of the repository - older versions are not supported anymore!**
