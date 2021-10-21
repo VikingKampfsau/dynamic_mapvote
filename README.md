@@ -2,43 +2,43 @@
 
 ## Overview
 
-A little test if it's possible to create a dynamic mapvote.<br/>
-This is a menu based mapvote that auto updates it's iwd everytime the map ends.<br/>
-That way the content of the mapvote is constantly changing without wasteing assets.<br/>
+A little test if it's possible to create a dynamic mapvote.<br>
+This is a menu based mapvote that auto updates its iwd everytime the map ends.<br>
+That way the content of the mapvote is constantly changing without wasteing assets.<br>
 
-**I never used this in any of my mods so it's not tested on a live server yet**<br/>
-**Full source included**<br/>
+**I never used this in any of my mods so it's not tested on a live server yet**<br>
+**Full source included**
 
 ## Installation
 
-Install cod4x and add the required plugins to it.<br/>
-Copy the mod to your mods folder - if you already have an older version then remove it.<br/>
+Install cod4x and add the required plugins to it.<br>
+Copy the mod to your mods folder - if you already have an older version then remove it.
 
-Add the content of the example config to your server config.<br/>
+Add the content of the example config to your server config.
 
 ## How to add more maps
 
-Add the map to config - dvar "sv_voteable_maps".<br/>
-Add the loadscreen.iwi file to \mapvote\images folder.<br/>
+Add the map to config - dvar "sv_voteable_maps".<br>
+Add the loadscreen.iwi file to \mapvote\images folder.
 
 ## FAQ
  
-- The mapvote.iwd is not updating<br/>
--> check your console and make sure you installed 'zip' on your server<br/>
+Q: The mapvote.iwd is not updating
+A: check your console and make sure you installed 'zip' on your server
 
-- The mapvote.iwd is generated empty and players get kicked with "Could not find loadscreen_0.iwi"<br/>
--> Make sure you installed 'zip' on your server<br/>
--> Make sure the folder and file permissions are correct<br/>
--> Make sure you have set the fs_homepath correctly<br/>
+Q: The mapvote.iwd is generated empty and players get kicked with "Could not find loadscreen_0.iwi"
+A: Make sure you installed 'zip' on your server
+   Make sure the folder and file permissions are correct
+   Make sure you have set the fs_homepath correctly
 
-- Players get a download loop when downloading the mapvote.iwd<br/>
--> The mod generates a new mapvote.iwd on every map end therefor the file continously changes.<br/>
--> To avoid a download loop create a softlink instead.<br/>
+Q: Players get a download loop when downloading the mapvote.iwd
+A: The mod generates a new mapvote.iwd on every map end therefor the file continously changes.
+   To avoid a download loop create a softlink instead.
 
 ## Support
-For bug reports and issues, please visit the "Issues" tab at the top.<br/>
-First look through the issues, maybe your problem has already been reported.<br/>
-If not, feel free to open a new issue.<br/>
+For bug reports and issues, please visit the "Issues" tab at the top.<br>
+First look through the issues, maybe your problem has already been reported.<br>
+If not, feel free to open a new issue.
 
 **Keep in mind that we only support the current state of the repository - older versions are not supported anymore!**
 
