@@ -39,14 +39,21 @@ shuffleArray(array)
 initMapvote()
 {
 	if(getDvarInt("mapvote_votetime") <= 0)	setDvar("mapvote_votetime", 15);
-	if(getDvarInt("mapvote_resulttime") <= 0)	setDvar("mapvote_resulttime", 5);
+	if(getDvarInt("mapvote_resulttime") <= 0) setDvar("mapvote_resulttime", 5);
+	if(getDvarInt("mapvote_resultdelay") <= 0) setDvar("mapvote_resultdelay", 3);
 	if(getDvarInt("mapvote_voteableItems") < 2) setDvar("mapvote_voteableItems", 2);
 	if(getDvarInt("mapvote_voteableItems") > 9) setDvar("mapvote_voteableItems", 9);
+	if(getDvarInt("mapvote_winner_display") < 0) setDvar("mapvote_winner_display", 0);
+	if(getDvarInt("mapvote_winner_display") > 3) setDvar("mapvote_winner_display", 3);
 
-	level.mapvote_voteableItems = getDvarInt("mapvote_voteableItems");
-	level.mapvote_mapsToVote = [];
 	level.mapVoteStarted = false;
+	
+	level.mapvote_mapsToVote = [];
+	level.mapvote_resulttime = getDvarInt("mapvote_resulttime");
+	level.mapvote_resultdelay = getDvarInt("mapvote_resultdelay");
 	level.mapvote_votetime = getDvarInt("mapvote_votetime");
+	level.mapvote_voteableItems = getDvarInt("mapvote_voteableItems");
+	level.mapvote_winner_display = getDvarInt("mapvote_winner_display");
 	
 	//on very first map the iwd is not up to date
 	//so create any mapvote and reboot the map
@@ -68,9 +75,9 @@ initMapvote()
 	
 	if(level.voteableMap.size > 1)
 	{	
-		thread openMapvote();
+		openMapvote();
 		updateCastVotes();
-		thread closeMapvote();
+		closeMapvote();
 	}
 	
 	prepareNextMapvote();
@@ -114,7 +121,14 @@ prepareNextMapvote()
 		
 	//update config file
 	FS_WriteLine(config, "//mapvote value import");
+	FS_WriteLine(config, "set mapvote_votetime " + (level.mapvote_votetime*1000));
+	FS_WriteLine(config, "set mapvote_resulttime " + (level.mapvote_resulttime*1000));
+	FS_WriteLine(config, "set mapvote_resultdelay " + (level.mapvote_resultdelay*1000));
+	FS_WriteLine(config, "set mapvote_winner_display " + level.mapvote_winner_display);
 	FS_WriteLine(config, "set mapvote_voteableItems " + level.mapvote_voteableItems);
+	FS_WriteLine(config, "set mapvote_columns " + ceil(level.mapvote_voteableItems/3));
+	FS_WriteLine(config, "set mapvote_rows " + int(floor((int((level.mapvote_voteableItems-0.5)*10) % int(3*10))/10)+1));
+	
 	for(i=0;i<level.mapvote_mapsToVote.size;i++)
 		FS_WriteLine(config, "set mapvote_map" + i + "_realname " + getMapDisplayname(level.mapvote_mapsToVote[i]));
 
@@ -233,25 +247,23 @@ openMapvote()
 {
 	level.mapVoteStarted = true;
 
+	//a player is joining a vote in progress
 	if(isDefined(self) && isPlayer(self))
 	{
-		self setClientDvars("mapvote_votetime", floor(level.mapvote_votetime - 0.1),
-							"mapvote_voteableItems", level.mapvote_voteableItems);
-
 		self closeMenu();
 		self closeInGameMenu();
 		self notify("reset_outcome");
 		self openMenu(game["menu_votemap"]);
+
+		wait .05;
+
+		if(isDefined(self) && isPlayer(self))
+			self setClientDvar("mapvote_votetime", level.remainingVoteTime);
 	}
 	else
 	{
 		for(i=0;i<level.players.size;i++)
 		{
-			level.players[i] setClientDvars(
-							"mapvote_votetime", floor(level.mapvote_votetime - 0.1),
-							"mapvote_voteableItems", level.mapvote_voteableItems);
-
-	
 			level.players[i] closeMenu();
 			level.players[i] closeInGameMenu();
 			level.players[i] notify("reset_outcome");
@@ -262,7 +274,18 @@ openMapvote()
 
 closeMapvote()
 {
+	if(level.mapvote_winner_display > 0)
+	{
+		wait getDvarInt("mapvote_resultdelay");
+		wait 0.8; //check the menu for the move (in) time of the winner image WINNER_ANIM_MOVESPEED
+	}
+
 	wait getDvarInt("mapvote_resulttime");
+
+	for(i=0;i<level.players.size;i++)
+		level.players[i] setClientDvar("mapvote_anim_moveout", 1);
+
+	wait 0.6; //check the menu for the move (out) time ANIM_MOVESPEED
 
 	for(i=0;i<level.players.size;i++)
 	{
@@ -273,35 +296,36 @@ closeMapvote()
 
 updateCastVotes()
 {
+	wait 0.6; //check the menu for the move (in) time ANIM_MOVESPEED
+
 	update = 0;
 	curWinner = -1;
-	timeLeft = level.mapvote_votetime * 1000;
-	while(timeLeft > 0)
+	level.remainingVoteTime = level.mapvote_votetime * 1000;
+	while(level.remainingVoteTime > 0)
 	{
-		update = timeLeft % 1000;
+		update = level.remainingVoteTime % 1000;
 		if(update == 0 || update == 500)
 		{
 			winner = GetVoteWinner();
-			thread sendVotesToPlayers((timeLeft/1000), winner);
+			thread sendVotesToPlayers(winner);
 		}
 	
 		wait .05;
 		
-		timeLeft -= 50;
+		level.remainingVoteTime -= 50;
 	}
 	
 	level.mapVoteStarted = false;
 	
 	winner = GetVoteWinner();
-	thread sendVotesToPlayers(0, winner);
+	thread sendVotesToPlayers(winner);
 	
-	iPrintLnBold("Next map: " + winner.name);
 	setDvar("sv_maprotation","gametype " + level.gametype + " map " + winner.name);
 	setDvar("sv_maprotationcurrent", "gametype " + level.gametype + " map " + winner.name);
 
 }
 
-sendVotesToPlayers(timeLeft, winner)
+sendVotesToPlayers(winner)
 {
 	tempArray = [];
 	for(i=0;i<=8;i++)
@@ -329,7 +353,6 @@ sendVotesToPlayers(timeLeft, winner)
 							"votes_mapvote_map6", tempArray[6],
 							"votes_mapvote_map7", tempArray[7],
 							"votes_mapvote_map8", tempArray[8],
-							"mapvote_votetime", floor(timeLeft - 0.1),
 							"mapvote_winner", winner);
 	}
 }
