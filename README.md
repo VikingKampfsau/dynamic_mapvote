@@ -9,6 +9,11 @@ That way the content of the mapvote is constantly changing without wasteing asse
 **I never used this in any of my mods so it's not tested on a live server yet**<br/>
 **Full source included**<br/>
 
+## Preview
+Video might be outdated but still shows the main content of the vote menu.
+
+https://user-images.githubusercontent.com/82271312/143201530-547ea624-5099-4a21-931b-840c9f02451d.mp4
+
 ## Installation
 
 Install cod4x and add the required plugins to it.<br/>
