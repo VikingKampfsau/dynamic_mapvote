@@ -9,6 +9,8 @@ That way the content of the mapvote is constantly changing without wasteing asse
 **I never used this in any of my mods so it's not tested on a live server yet**<br/>
 **Full source included**<br/>
 
+**LINUX OS ONLY!**<br/>
+
 ## Preview
 Video might be outdated but still shows the main content of the vote menu.
 
@@ -16,10 +18,35 @@ https://user-images.githubusercontent.com/82271312/143201530-547ea624-5099-4a21-
 
 ## Installation
 
+Install sshpass in order to upload the iwd to your fastdl when you don't run it on the same machine as your cod4 server.
+Otherwise a softlink created on the fastdl pointing to the mapvote.iwd is enough.
+
+###### Install the example files from this repro:
 Install cod4x and add the required plugins to it.<br/>
 Copy the mod to your mods folder - if you already have an older version then remove it.<br/>
 
 Add the content of the example config to your server config.<br/>
+
+###### Add this repro to your mod project:
+Install cod4x and add the required plugins to it.<br/>
+Add the content of the example config to your server config.<br/>
+Add the content of the example mod.csv to your mod.csv.<br/>
+Copy the materials, material_propteries and ui_mp folders to your modtools raw folder.<br/>
+Copy the mapvote folder and mapvote.iwd to the root folder of your mod.
+Compile your mod.
+
+Modify the maps/mp/gametype/_globallogic.gsc or the script that handles your end of game and map rotation.
+Add the following at the desired position:
+```
+	level notify("start_mapvote"); //start the mapvote
+	level waittill("end_mapvote"); //wait for it's end
+```
+
+Also do not forget to init the mapvote.
+Add the following line to any main function of your scripts:
+```
+	thread mapvote\script\dynamic_mapvote::init(); //init mapvote
+```
 
 ## How to add more maps
 
@@ -29,7 +56,7 @@ Add the loadscreen.iwi file to \mapvote\images folder.<br/>
 ## FAQ
  
 Q: The mapvote.iwd is not updating<br/>
-A: check your console and make sure you installed 'zip' on your server<br/>
+A: check your console log and make sure you installed 'zip' on your server<br/>
 
 Q: The mapvote.iwd is generated empty and players get kicked with "Could not find loadscreen_0.iwi"<br/>
 A: Make sure you installed 'zip' on your server<br/>
@@ -39,6 +66,11 @@ A: Make sure you installed 'zip' on your server<br/>
 Q: Players get a download loop when downloading the mapvote.iwd<br/>
 A: The mod generates a new mapvote.iwd on every map end therefor the file continously changes.<br/>
    To avoid a download loop create a softlink instead.<br/>
+
+Q: Players download the mapvote.iwd from server instead from fastdl<br/>
+A: When your fastdl runs on the same machine as your server you can create a softlink at fastdl folder to the mapvote.iwd located in your cod4 server.<br/>
+   To upload the mapvote.iwd to a remote server please check your config settings and the login and file permissions on the remote server.<br/>
+   The console log should tell you when the upload failed<br/>
 
 ## Support
 For bug reports and issues, please visit the "Issues" tab at the top.<br><br/>

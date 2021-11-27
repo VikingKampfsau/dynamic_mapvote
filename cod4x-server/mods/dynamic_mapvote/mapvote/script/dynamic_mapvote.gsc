@@ -162,6 +162,10 @@ prepareNextMapvote()
 	
 	//create a new mapvote.iwd from temp, containing the images and the config
 	system("cd " + serverAndModPath + "/mapvote/temp;zip -r ../../mapvote.iwd *");
+	
+	//in case the fastdownload is on a different server or the host did not set a simlink try to upload the new iwd to the fastdl server
+	if(getDvar("mapvote_fastdl_ip") != "")
+		system("sshpass -p '" + getDvar("mapvote_fastdl_password") + "' scp " + serverAndModPath + "/mapvote.iwd " + getDvar("mapvote_fastdl_username") + "@" + getDvar("mapvote_fastdl_ip") + ":" + getDvar("mapvote_fastdl_folder") + fs_game + "/");
 }
 
 getMapDisplayname(map)

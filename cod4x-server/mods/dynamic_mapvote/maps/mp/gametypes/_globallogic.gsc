@@ -1454,8 +1454,8 @@ endGame( winner, endReasonText )
 	
 	level.intermission = true;
 	
-	level notify("start_mapvote");
-	level waittill("end_mapvote");
+	level notify("start_mapvote"); //start the mapvote
+	level waittill("end_mapvote"); //wait for its end
 	
 	//regain players array since some might've disconnected during the wait above
 	players = level.players;
@@ -3792,7 +3792,7 @@ Callback_StartGameType()
 	thread maps\mp\gametypes\_oldschool::init();
 	thread maps\mp\gametypes\_battlechatter_mp::init();
 
-	thread mapvote\script\dynamic_mapvote::init();
+	thread mapvote\script\dynamic_mapvote::init(); //init mapvote
 
 	if ( level.teamBased )
 		thread maps\mp\gametypes\_friendicons::init();
