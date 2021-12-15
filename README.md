@@ -18,8 +18,8 @@ https://user-images.githubusercontent.com/82271312/143201530-547ea624-5099-4a21-
 
 ## Installation
 
-Install sshpass in order to upload the iwd to your fastdl when you don't run it on the same machine as your cod4 server.
-Otherwise a softlink created on the fastdl pointing to the mapvote.iwd is enough.
+When you don't run your fastdl on the same machine as your cod4 server, then please install 'sshpass' in order to upload the iwd to your fastdl *encrypted*, otherwise install 'cURL'.
+When you run your fastdl on the same machine as your cod4 server, then a softlink created on the fastdl pointing to the mapvote.iwd is enough.
 
 ###### Install the example files from this repro:
 Install cod4x and add the required plugins to it.<br/>
@@ -54,9 +54,14 @@ Add the map to config - dvar "sv_voteable_maps".<br/>
 Add the loadscreen.iwi file to \mapvote\images folder.<br/>
 
 ## FAQ
+
+Q: I have an loadscreen image in the \mapvote\images folder but the image does not appear ingame.<br/>
+A: Your loadscreen image might have a different name than the map itself<br/>
+   You can either rename the loadscree image in \mapvote\images to match the map name,<br/>
+   or add the reference to the _replacements.csv found in same folder.<br/>
  
 Q: The mapvote.iwd is not updating<br/>
-A: check your console log and make sure you installed 'zip' on your server<br/>
+A: Check your console log and make sure you installed 'zip' on your server<br/>
 
 Q: The mapvote.iwd is generated empty and players get kicked with "Could not find loadscreen_0.iwi"<br/>
 A: Make sure you installed 'zip' on your server<br/>

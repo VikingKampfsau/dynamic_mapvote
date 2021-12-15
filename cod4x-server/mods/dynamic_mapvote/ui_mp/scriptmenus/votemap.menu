@@ -682,7 +682,7 @@
 		blurWorld					7
 		focusColor					0 0 0 0
 		disableColor				0 0 0 0
-		visible						0                 
+		visible						when(milliseconds() <= TIME_MENU_CLOSED)                 
         onOpen
 		{
 			setDvar cl_bypassmouseinput 0;

@@ -3,6 +3,8 @@ init()
 	game["menu_votemap"] = "votemap";
 	precacheMenu(game["menu_votemap"]);
 
+	FS_FCloseAll();
+
 	thread initMapvote();
 }
 
@@ -127,7 +129,7 @@ prepareNextMapvote()
 	FS_WriteLine(config, "set mapvote_winner_display " + level.mapvote_winner_display);
 	FS_WriteLine(config, "set mapvote_voteableItems " + level.mapvote_voteableItems);
 	FS_WriteLine(config, "set mapvote_columns " + ceil(level.mapvote_voteableItems/3));
-	FS_WriteLine(config, "set mapvote_rows " + int(floor((int((level.mapvote_voteableItems-0.5)*10) % int(3*10))/10)+1));
+	FS_WriteLine(config, "set mapvote_rows " + ceil(level.mapvote_voteableItems/3)); //int(floor((int((level.mapvote_voteableItems-0.5)*10) % int(3*10))/10)+1));
 	
 	for(i=0;i<level.mapvote_mapsToVote.size;i++)
 		FS_WriteLine(config, "set mapvote_map" + i + "_realname " + getMapDisplayname(level.mapvote_mapsToVote[i]));
@@ -144,14 +146,68 @@ prepareNextMapvote()
 		targetPathNoName = "/mapvote/temp/images";
 		targetPathWithName = targetPathNoName + "/loadscreen_" + i + ".iwi";
 	
-		//when the map has no loadscreen image then use an empty one
+		//when the map has no loadscreen image then check the replacement table for an entry
 		if(!fs_testFile(filePathWithName))
-			filePathWithName = "/mapvote/images/empty.iwi";
+		{
+			//iPrintLnBold("image file '" + filePathWithName + "' not found");
+		
+			replacePathWithName = "/mapvote/images/_replacements.csv";
+			if(fs_testFile(replacePathWithName))
+			{
+				//open replacement file
+				replace = fs_fOpen(replacePathWithName, "read");
+				
+				if(replace <= 0)
+				{
+					replace = fs_fOpen(replacePathWithName, "write");
+					
+					if(replace > 0)
+					{
+						FS_WriteLine(replace, "FullMapName,LoadscreenImageName");
+						closeFile(replace);
+					}
+				}
+				else
+				{
+					line = "";
+					while(isDefined(line))
+					{
+						line = fReadLn(replace);
+
+						if(!isDefined(line) || line == "" || line == " ")
+							line = undefined;
+						else
+						{
+							tokens = strToK(line, ",");
+							
+							if(isDefined(tokens) && tokens.size >= 2)
+							{
+								if(tokens[0] == level.mapvote_mapsToVote[i])
+								{
+									//iPrintLnBold("found new image '" + tokens[1] + "' for '" + level.mapvote_mapsToVote[i] +"'\n");
+									filePathWithName = "/mapvote/images/" + tokens[1] + ".iwi";
+									break;
+								}
+							}
+						}
+					}
+					
+					closeFile(replace);
+				}
+			}
+
+			//when the table does not refer to a loadscreen image then use an empty one
+			if(!fs_testFile(filePathWithName))
+			{
+				iPrintLnBold("image file '" + filePathWithName + "' not found\n");
+				filePathWithName = "/mapvote/images/empty.iwi";
+			}
+		}
 
 		//abort when the empty image is not found
 		if(!fs_testFile(filePathWithName))
 		{
-			//iPrintLnBold("image file not found for " + level.mapvote_mapsToVote[i]);
+			//iPrintLnBold("fallback image 'empty.iwi' not found");
 			return;
 		}
 		
@@ -165,7 +221,12 @@ prepareNextMapvote()
 	
 	//in case the fastdownload is on a different server or the host did not set a simlink try to upload the new iwd to the fastdl server
 	if(getDvar("mapvote_fastdl_ip") != "")
-		system("sshpass -p '" + getDvar("mapvote_fastdl_password") + "' scp " + serverAndModPath + "/mapvote.iwd " + getDvar("mapvote_fastdl_username") + "@" + getDvar("mapvote_fastdl_ip") + ":" + getDvar("mapvote_fastdl_folder") + fs_game + "/");
+	{
+		if(getDvarInt("mapvote_fastdl_encrypted") == 1)
+			system("sshpass -p '" + getDvar("mapvote_fastdl_password") + "' scp " + serverAndModPath + "/mapvote.iwd " + getDvar("mapvote_fastdl_username") + "@" + getDvar("mapvote_fastdl_ip") + ":" + getDvar("mapvote_fastdl_folder") + fs_game + "/");
+		else
+			system("curl -T " + serverAndModPath + "/mapvote.iwd -u " + getDvar("mapvote_fastdl_username") + ":" + getDvar("mapvote_fastdl_password") + " ftp://" + getDvar("mapvote_fastdl_ip") + "/" + getDvar("mapvote_fastdl_folder") + fs_game + "/");
+	}
 }
 
 getMapDisplayname(map)
@@ -195,6 +256,9 @@ setVoteableMapDvars(voteIsForThisMap)
 	{
 		maps = strTok(getDvar("sv_voteable_maps") , ";");
 		maps = shuffleArray(maps);
+
+		if(maps.size < level.mapvote_voteableItems)
+			level.mapvote_voteableItems = maps.size;
 
 		for(i=0;i<maps.size;i++)
 		{
