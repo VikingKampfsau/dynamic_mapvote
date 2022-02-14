@@ -21,6 +21,8 @@ https://user-images.githubusercontent.com/82271312/143201530-547ea624-5099-4a21-
 When you don't run your fastdl on the same machine as your cod4 server, then please install 'sshpass' in order to upload the iwd to your fastdl *encrypted*, otherwise install 'cURL'.
 When you run your fastdl on the same machine as your cod4 server, then a softlink created on the fastdl pointing to the mapvote.iwd is enough.
 
+Note: For sshpass you might have to accept the host fingerprint on the very first run!
+
 ###### Install the example files from this repro:
 Install cod4x and add the required plugins to it.<br/>
 Copy the mod to your mods folder - if you already have an older version then remove it.<br/>

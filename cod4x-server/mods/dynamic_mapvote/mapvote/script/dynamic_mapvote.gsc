@@ -128,8 +128,12 @@ prepareNextMapvote()
 	FS_WriteLine(config, "set mapvote_resultdelay " + (level.mapvote_resultdelay*1000));
 	FS_WriteLine(config, "set mapvote_winner_display " + level.mapvote_winner_display);
 	FS_WriteLine(config, "set mapvote_voteableItems " + level.mapvote_voteableItems);
-	FS_WriteLine(config, "set mapvote_columns " + ceil(level.mapvote_voteableItems/3));
-	FS_WriteLine(config, "set mapvote_rows " + ceil(level.mapvote_voteableItems/3)); //int(floor((int((level.mapvote_voteableItems-0.5)*10) % int(3*10))/10)+1));
+	FS_WriteLine(config, "set mapvote_rows " + ceil(level.mapvote_voteableItems/3));
+
+	if(level.mapvote_voteableItems > 3)
+		FS_WriteLine(config, "set mapvote_columns 3");
+	else
+		FS_WriteLine(config, "set mapvote_columns " + level.mapvote_voteableItems); //FS_WriteLine(config, "set mapvote_columns " + int(floor((int((level.mapvote_voteableItems-0.5)*10) % int(3*10))/10)+1));
 	
 	for(i=0;i<level.mapvote_mapsToVote.size;i++)
 		FS_WriteLine(config, "set mapvote_map" + i + "_realname " + getMapDisplayname(level.mapvote_mapsToVote[i]));
