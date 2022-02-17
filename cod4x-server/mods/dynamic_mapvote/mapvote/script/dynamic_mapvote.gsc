@@ -40,6 +40,20 @@ shuffleArray(array)
 
 initMapvote()
 {
+	if(getDvar("mapvote_fastdl_ip") != "")
+	{
+		AssertEx(getDvar("mapvote_fastdl_username") != "", "^1FastDL Username not set!\n\n");
+		AssertEx(getDvar("mapvote_fastdl_password") != "", "^1FastDL Password not set!\n\n");
+
+		if(getDvar("mapvote_fastdl_port") == "")
+		{
+			if(getDvarInt("mapvote_fastdl_encrypted") == 1)
+				setDvar("mapvote_fastdl_port", "22");
+			else
+				setDvar("mapvote_fastdl_port", "21");
+		}
+	}
+
 	if(getDvarInt("mapvote_votetime") <= 0)	setDvar("mapvote_votetime", 15);
 	if(getDvarInt("mapvote_resulttime") <= 0) setDvar("mapvote_resulttime", 5);
 	if(getDvarInt("mapvote_resultdelay") <= 0) setDvar("mapvote_resultdelay", 3);
@@ -84,7 +98,7 @@ initMapvote()
 	
 	prepareNextMapvote();
 	
-	wait 3;
+	//wait 3; //i think this is a leftover from debugging
 	
 	level notify("end_mapvote");
 }
@@ -128,12 +142,8 @@ prepareNextMapvote()
 	FS_WriteLine(config, "set mapvote_resultdelay " + (level.mapvote_resultdelay*1000));
 	FS_WriteLine(config, "set mapvote_winner_display " + level.mapvote_winner_display);
 	FS_WriteLine(config, "set mapvote_voteableItems " + level.mapvote_voteableItems);
-	FS_WriteLine(config, "set mapvote_rows " + ceil(level.mapvote_voteableItems/3));
-
-	if(level.mapvote_voteableItems > 3)
-		FS_WriteLine(config, "set mapvote_columns 3");
-	else
-		FS_WriteLine(config, "set mapvote_columns " + level.mapvote_voteableItems); //FS_WriteLine(config, "set mapvote_columns " + int(floor((int((level.mapvote_voteableItems-0.5)*10) % int(3*10))/10)+1));
+	FS_WriteLine(config, "set mapvote_columns " + ceil(level.mapvote_voteableItems/3));
+	FS_WriteLine(config, "set mapvote_rows " + ceil(level.mapvote_voteableItems/3)); //int(floor((int((level.mapvote_voteableItems-0.5)*10) % int(3*10))/10)+1));
 	
 	for(i=0;i<level.mapvote_mapsToVote.size;i++)
 		FS_WriteLine(config, "set mapvote_map" + i + "_realname " + getMapDisplayname(level.mapvote_mapsToVote[i]));
@@ -203,7 +213,7 @@ prepareNextMapvote()
 			//when the table does not refer to a loadscreen image then use an empty one
 			if(!fs_testFile(filePathWithName))
 			{
-				iPrintLnBold("image file '" + filePathWithName + "' not found\n");
+				//iPrintLnBold("image file '" + filePathWithName + "' not found\n");
 				filePathWithName = "/mapvote/images/empty.iwi";
 			}
 		}
@@ -220,16 +230,65 @@ prepareNextMapvote()
 		system("cp " + serverAndModPath + filePathWithName + " " + serverAndModPath + targetPathWithName);
 	}
 	
-	//create a new mapvote.iwd from temp, containing the images and the config
-	system("cd " + serverAndModPath + "/mapvote/temp;zip -r ../../mapvote.iwd *");
-	
-	//in case the fastdownload is on a different server or the host did not set a simlink try to upload the new iwd to the fastdl server
-	if(getDvar("mapvote_fastdl_ip") != "")
+	//create a batch file to move the zipping and upload into a background process
+	//this will fix any lagspikes!
+	//however - do not do this on server launch or when the batch creation failed
+	createdBatch = false;
+	if(getDvarInt("mapvote_setupDone") > 0)
 	{
-		if(getDvarInt("mapvote_fastdl_encrypted") == 1)
-			system("sshpass -p '" + getDvar("mapvote_fastdl_password") + "' scp " + serverAndModPath + "/mapvote.iwd " + getDvar("mapvote_fastdl_username") + "@" + getDvar("mapvote_fastdl_ip") + ":" + getDvar("mapvote_fastdl_folder") + fs_game + "/");
-		else
-			system("curl -T " + serverAndModPath + "/mapvote.iwd -u " + getDvar("mapvote_fastdl_username") + ":" + getDvar("mapvote_fastdl_password") + " ftp://" + getDvar("mapvote_fastdl_ip") + "/" + getDvar("mapvote_fastdl_folder") + fs_game + "/");
+		//create a batch file for background execution
+		batch = fs_fOpen("/mapvote/bg_zip_upload.sh", "write");
+		
+		//batch writeable
+		if(batch > 0)
+		{			
+			//create a new mapvote.iwd from temp, containing the images and the config
+			FS_WriteLine(batch, "cd " + serverAndModPath + "/mapvote/temp");
+			//FS_WriteLine(batch, "zip -r mapvote.iwd * -x 'mapvote.iwd'");
+			//FS_WriteLine(batch, "cp mapvote.iwd ../../mapvote.iwd");
+			FS_WriteLine(batch, "zip -r ../../mapvote.iwd *");
+
+			//in case the fastdownload is on a different server or the host did not set a simlink
+			if(getDvar("mapvote_fastdl_ip") != "")
+			{
+				//upload the new iwd to the fastdl server
+				//this will always cause a lagspike when running in foreground
+				//that's why a batch is written and executed in background later
+				if(getDvarInt("mapvote_fastdl_encrypted") == 1)
+					FS_WriteLine(batch, "sshpass -p '" + getDvar("mapvote_fastdl_password") + "' scp -o 'StrictHostKeyChecking=no' -P " + getDvar("mapvote_fastdl_port") + " " + serverAndModPath + "/mapvote.iwd " + getDvar("mapvote_fastdl_username") + "@" + getDvar("mapvote_fastdl_ip") + ":" + getDvar("mapvote_fastdl_folder") + fs_game + "/");
+				else
+					FS_WriteLine(batch, "curl -T " + serverAndModPath + "/mapvote.iwd -u " + getDvar("mapvote_fastdl_username") + ":" + getDvar("mapvote_fastdl_password") + " ftp://" + getDvar("mapvote_fastdl_ip") + ":" + getDvar("mapvote_fastdl_port") + "/" + getDvar("mapvote_fastdl_folder") + fs_game + "/");
+			}
+
+			//close batch file
+			fs_fClose(batch);
+			
+			createdBatch = true;
+		}
+	}
+	
+	if(createdBatch)
+	{
+		system("chmod +x " + serverAndModPath + "/mapvote/bg_zip_upload.sh");
+		system(/*"./" +*/ serverAndModPath + "/mapvote/bg_zip_upload.sh &");
+	}
+	else
+	{
+		//create a new mapvote.iwd from temp, containing the images and the config
+		//system("cd " + serverAndModPath + "/mapvote/temp;zip -r mapvote.iwd * -x 'mapvote.iwd'");
+		//system("cd " + serverAndModPath + "/mapvote/temp;cp mapvote.iwd ../../mapvote.iwd");
+		system("cd " + serverAndModPath + "/mapvote/temp;zip -r ../../mapvote.iwd *");
+	
+		//in case the fastdownload is on a different server or the host did not set a simlink
+		if(getDvar("mapvote_fastdl_ip") != "")
+		{
+			//upload the new iwd to the fastdl server
+			//this will always cause a lagspike when running in foreground
+			if(getDvarInt("mapvote_fastdl_encrypted") == 1)
+				system("sshpass -p '" + getDvar("mapvote_fastdl_password") + "' scp -o 'StrictHostKeyChecking=no' -P " + getDvar("mapvote_fastdl_port") + " " + serverAndModPath + "/mapvote.iwd " + getDvar("mapvote_fastdl_username") + "@" + getDvar("mapvote_fastdl_ip") + ":" + getDvar("mapvote_fastdl_folder") + fs_game + "/");
+			else
+				system("curl -T " + serverAndModPath + "/mapvote.iwd -u " + getDvar("mapvote_fastdl_username") + ":" + getDvar("mapvote_fastdl_password") + " ftp://" + getDvar("mapvote_fastdl_ip") + ":" + getDvar("mapvote_fastdl_port") + "/" + getDvar("mapvote_fastdl_folder") + fs_game + "/");
+		}
 	}
 }
 
