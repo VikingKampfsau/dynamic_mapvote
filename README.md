@@ -76,6 +76,7 @@ A: The mod generates a new mapvote.iwd on every map end therefor the file contin
 
 Q: Players download the mapvote.iwd from server instead from fastdl<br/>
 A: When your fastdl runs on the same machine as your server you can create a softlink at fastdl folder to the mapvote.iwd located in your cod4 server.<br/>
+   Some people already reported problems with apache and the softlink - use the file upload then.<br/>
    To upload the mapvote.iwd to a remote server please check your config settings and the login and file permissions on the remote server.<br/>
    The console log should tell you when the upload failed<br/>
 
