@@ -81,17 +81,16 @@ initMapvote()
 		setDvar("sv_maprotation","gametype " + level.gametype + " map " + level.script);
 		setDvar("sv_maprotationcurrent", "gametype " + level.gametype + " map " + level.script);
 		exitLevel(false);
-		return;
 	}
 
 	thread onPlayerConnect();
 
 	setVoteableMapDvars(true);
-
+	
 	level waittill("start_mapvote");
-
-	if(game["voteableMap"].size > 1)
-	{
+	
+	if(level.voteableMap.size > 1)
+	{	
 		openMapvote();
 		updateCastVotes();
 		closeMapvote();
@@ -343,8 +342,8 @@ setVoteableMapDvars(voteIsForThisMap)
 		}
 	}
 	else
-	{		
-		game["voteableMap"] = [];
+	{
+		level.voteableMap = [];
 	
 		maps = undefined;
 		getMapsFromConfig = false;
@@ -361,18 +360,16 @@ setVoteableMapDvars(voteIsForThisMap)
 			else
 				map = maps[i];
 			
-			//do not empty the dvar
-			//this will break the first vote and roundbased votes 
-			//setDvar("mapvote_map" + i, "");
+			setDvar("mapvote_map" + i, "");
 			
 			if(!isDefined(map) || map == "" || map == " ")
 				continue;
 		
-			game["voteableMap"][i] = spawnStruct();
-			game["voteableMap"][i].id = i;
-			game["voteableMap"][i].menuid = i+1;
-			game["voteableMap"][i].name = map;
-			game["voteableMap"][i].votes = 0;
+			level.voteableMap[i] = spawnStruct();
+			level.voteableMap[i].id = i;
+			level.voteableMap[i].menuid = i+1;
+			level.voteableMap[i].name = map;
+			level.voteableMap[i].votes = 0;
 		}
 	}
 }
@@ -456,6 +453,7 @@ updateCastVotes()
 	
 	setDvar("sv_maprotation","gametype " + level.gametype + " map " + winner.name);
 	setDvar("sv_maprotationcurrent", "gametype " + level.gametype + " map " + winner.name);
+
 }
 
 sendVotesToPlayers(winner)
@@ -463,8 +461,8 @@ sendVotesToPlayers(winner)
 	tempArray = [];
 	for(i=0;i<=8;i++)
 	{
-		if(i < game["voteableMap"].size)
-			tempArray[i] = game["voteableMap"][i].votes;
+		if(i < level.voteableMap.size)
+			tempArray[i] = level.voteableMap[i].votes;
 		else
 			tempArray[i] = 0;
 	}
@@ -499,20 +497,20 @@ GetVoteWinner()
 		if(level.mapVoteStarted)
 			return undefined;
 	
-		return game["voteableMap"][randomInt(game["voteableMap"].size)];
+		return level.voteableMap[randomInt(level.voteableMap.size)];
 	}
 
 	curAmount = 0;
-	for(i=0;i<game["voteableMap"].size;i++)
+	for(i=0;i<level.voteableMap.size;i++)
 	{
-		if(game["voteableMap"][i].votes == curAmount)
-			possibleWinner[possibleWinner.size] = game["voteableMap"][i];
-		else if(game["voteableMap"][i].votes > curAmount)
+		if(level.voteableMap[i].votes == curAmount)
+			possibleWinner[possibleWinner.size] = level.voteableMap[i];
+		else if(level.voteableMap[i].votes > curAmount)
 		{
-			curAmount = game["voteableMap"][i].votes;
+			curAmount = level.voteableMap[i].votes;
 			
 			possibleWinner = undefined;
-			possibleWinner[0] = game["voteableMap"][i];
+			possibleWinner[0] = level.voteableMap[i];
 		}
 	}
 
@@ -521,7 +519,7 @@ GetVoteWinner()
 		if(level.mapVoteStarted)
 			return undefined;
 	
-		return game["voteableMap"][randomInt(game["voteableMap"].size)];
+		return level.voteableMap[randomInt(level.voteableMap.size)];
 	}
 	
 	return possibleWinner[randomInt(possibleWinner.size)];
@@ -573,8 +571,8 @@ castVote(response)
 	vote = int(vote);
 
 	if(isDefined(self.hasVotedMap))
-		game["voteableMap"][self.hasVotedMap].votes--;
+		level.voteableMap[self.hasVotedMap].votes--;
 		
-	game["voteableMap"][vote].votes++;
+	level.voteableMap[vote].votes++;
 	self.hasVotedMap = vote;
 }
