@@ -81,16 +81,17 @@ initMapvote()
 		setDvar("sv_maprotation","gametype " + level.gametype + " map " + level.script);
 		setDvar("sv_maprotationcurrent", "gametype " + level.gametype + " map " + level.script);
 		exitLevel(false);
+		return;
 	}
 
 	thread onPlayerConnect();
 
 	setVoteableMapDvars(true);
-	
+
 	level waittill("start_mapvote");
-	
+
 	if(level.voteableMap.size > 1)
-	{	
+	{
 		openMapvote();
 		updateCastVotes();
 		closeMapvote();
@@ -342,7 +343,7 @@ setVoteableMapDvars(voteIsForThisMap)
 		}
 	}
 	else
-	{
+	{	
 		level.voteableMap = [];
 	
 		maps = undefined;
@@ -360,7 +361,9 @@ setVoteableMapDvars(voteIsForThisMap)
 			else
 				map = maps[i];
 			
-			setDvar("mapvote_map" + i, "");
+			//do not empty the dvar
+			//this will break the first vote and roundbased votes 
+			//setDvar("mapvote_map" + i, "");
 			
 			if(!isDefined(map) || map == "" || map == " ")
 				continue;
@@ -453,7 +456,6 @@ updateCastVotes()
 	
 	setDvar("sv_maprotation","gametype " + level.gametype + " map " + winner.name);
 	setDvar("sv_maprotationcurrent", "gametype " + level.gametype + " map " + winner.name);
-
 }
 
 sendVotesToPlayers(winner)
